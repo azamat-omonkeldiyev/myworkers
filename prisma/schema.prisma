@@ -23,26 +23,27 @@ model Region {
 }
 
 model User {
-  id        String     @id @default(uuid())
-  fullname  String
-  password  String
-  email     String
-  phone     String?
-  address   String?
-  region    Region?    @relation(fields: [regionId], references: [id])
-  regionId  String?
-  role      UserRole
-  INN       String?
-  MFO       String?
-  RC        String?
-  Bank      String?
-  Oked      String?
-  createdAt DateTime   @default(now())
-  Sessions  Sessions[]
-  Order     Order[]
-  FAQ       FAQ[]
-  Comment   Comment[]
-  Star      Star[]
+  id          String        @id @default(uuid())
+  fullname    String
+  password    String
+  email       String
+  phone       String?
+  address     String?
+  region      Region?       @relation(fields: [regionId], references: [id])
+  regionId    String?
+  role        UserRole
+  INN         String?
+  MFO         String?
+  RC          String?
+  Bank        String?
+  Oked        String?
+  createdAt   DateTime      @default(now())
+  Sessions    Sessions[]
+  Order       Order[]
+  FAQ         FAQ[]
+  Comment     Comment[]
+  Star        Star[]
+  BasketItems BasketItems[]
 }
 
 enum UserRole {
@@ -57,6 +58,7 @@ model Sessions {
   id         String   @id @default(uuid())
   user       User     @relation(fields: [userId], references: [id])
   userId     String
+  ip_address String
   deviceData Json
   createdAt  DateTime @default(now())
 }
@@ -89,7 +91,7 @@ model Size {
 }
 
 model Tools {
-  id             String       @id @default(uuid())
+  id             String        @id @default(uuid())
   name_uz        String?
   name_en        String?
   name_ru        String?
@@ -98,59 +100,79 @@ model Tools {
   description_ru String?
   price          Float
   quantity       Int
-  code           Int          @default(autoincrement())
-  brand          Brand        @relation(fields: [brandId], references: [id])
+  code           Int           @default(autoincrement())
+  brand          Brand         @relation(fields: [brandId], references: [id])
   brandId        String
-  capacity       Capacity     @relation(fields: [capacityId], references: [id])
+  capacity       Capacity      @relation(fields: [capacityId], references: [id])
   capacityId     String
-  size           Size         @relation(fields: [sizeId], references: [id])
+  size           Size          @relation(fields: [sizeId], references: [id])
   sizeId         String
   isActive       Boolean
   image          String
-  products       Product[]    @relation("ProductsTools")
-  createdAt      DateTime     @default(now())
+  products       Product[]     @relation("ProductsTools")
+  createdAt      DateTime      @default(now())
   OrderTools     OrderTools[]
+  BasketItems    BasketItems[]
 }
 
 model Product {
-  id              String       @id @default(uuid())
-  isActive        Boolean      @default(true)
-  name_uz         String?
-  name_en         String?
-  name_ru         String?
-  image           String
-  minWorkingHours Int
-  levels          Level[]      @relation("ProductsLevels")
-  priceHourly     Int
-  priceDaily      Int
-  tools           Tools[]      @relation("ProductsTools")
-  createdAt       DateTime     @default(now())
-  OrderItems      OrderItems[]
+  id          String        @id @default(uuid())
+  isActive    Boolean       @default(true)
+  name_uz     String?
+  name_en     String?
+  name_ru     String?
+  image       String
+  levels      Level[]       @relation("ProductsLevels")
+  tools       Tools[]       @relation("ProductsTools")
+  createdAt   DateTime      @default(now())
+  OrderItems  OrderItems[]
+  BasketItems BasketItems[]
+  MasterItems MasterItems[]
 }
 
 model Level {
-  id         String       @id @default(uuid())
-  name_uz    String?
-  name_en    String?
-  name_ru    String?
-  products   Product[]    @relation("ProductsLevels")
-  createdAt  DateTime     @default(now())
-  OrderItems OrderItems[]
+  id              String        @id @default(uuid())
+  name_uz         String?
+  name_en         String?
+  name_ru         String?
+  minWorkingHours Int
+  priceHourly     Int
+  priceDaily      Int
+  products        Product[]     @relation("ProductsLevels")
+  createdAt       DateTime      @default(now())
+  OrderItems      OrderItems[]
+  BasketItems     BasketItems[]
+  MasterItems     MasterItems[]
 }
 
 model Master {
-  id            String   @id @default(uuid())
+  id            String        @id @default(uuid())
   fullname      String
   phone         String
   isActive      Boolean
   year          Int
-  MasterJobs    Json
   image         String
   passportImage String
   about         String
-  createdAt     DateTime @default(now())
+  createdAt     DateTime      @default(now())
   Star          Star[]
-  Order         Order[]  @relation("OrderMaster")
+  Order         Order[]       @relation("OrderMaster")
+  MasterItems   MasterItems[]
+  OrderMaster   OrderMaster[]
+}
+
+model MasterItems {
+  id              String   @id @default(uuid())
+  master          Master   @relation(fields: [masterId], references: [id])
+  masterId        String
+  product         Product  @relation(fields: [productId], references: [id])
+  productId       String
+  minWorkingHours Int
+  level           Level    @relation(fields: [levelId], references: [id])
+  levelId         String
+  priceHourly     Int
+  priceDaily      Int
+  createdAt       DateTime @default(now())
 }
 
 model Star {
@@ -164,7 +186,7 @@ model Star {
 }
 
 model Order {
-  id                String       @id @default(uuid())
+  id                String        @id @default(uuid())
   total             Float?
   location          Json
   address           String
@@ -173,27 +195,28 @@ model Order {
   withDelivery      Boolean
   status            OrderStatus
   commentToDelivery String
-  user              User         @relation(fields: [userId], references: [id])
+  user              User          @relation(fields: [userId], references: [id])
   userId            String
-  master            Master[]     @relation("OrderMaster")
-  createdAt         DateTime     @default(now())
+  master            Master[]      @relation("OrderMaster")
+  createdAt         DateTime      @default(now())
   Comment           Comment[]
   OrderItems        OrderItems[]
   OrderTools        OrderTools[]
+  OrderMaster       OrderMaster[]
 }
 
 model OrderItems {
-  id        String       @id @default(uuid())
-  order     Order        @relation(fields: [orderId], references: [id])
-  orderId   String
-  product   Product      @relation(fields: [productId], references: [id])
-  productId String
-  level     Level        @relation(fields: [levelId], references: [id])
-  levelId   String
-  quantity  Int
-  meansure  meansureEnum
+  id            String       @id @default(uuid())
+  order         Order        @relation(fields: [orderId], references: [id])
+  orderId       String
+  product       Product      @relation(fields: [productId], references: [id])
+  productId     String
+  level         Level        @relation(fields: [levelId], references: [id])
+  levelId       String
+  quantity      Int
+  meansure      meansureEnum
   meansureCount Float?
-  createdAt DateTime     @default(now())
+  createdAt     DateTime     @default(now())
 }
 
 model OrderTools {
@@ -207,6 +230,16 @@ model OrderTools {
   createdAt DateTime @default(now())
 }
 
+model OrderMaster {
+  orderId  String
+  masterId String
+
+  order  Order  @relation(fields: [orderId], references: [id])
+  master Master @relation(fields: [masterId], references: [id])
+
+  @@id([orderId, masterId]) // ✅ Kompozit primary key
+}
+
 enum meansureEnum {
   DAY
   HOUR
@@ -217,10 +250,26 @@ enum paymentEnum {
   CARD
 }
 
+model BasketItems {
+  id        String       @id @default(uuid())
+  product   Product?     @relation(fields: [productId], references: [id])
+  productId String?
+  user      User         @relation(fields: [userId], references: [id])
+  userId    String
+  level     Level?       @relation(fields: [levelId], references: [id])
+  levelId   String?
+  tool      Tools?       @relation(fields: [toolId], references: [id])
+  toolId    String?
+  quantity  Int
+  meansure  meansureEnum
+  total     Float?
+  createdAt DateTime     @default(now())
+}
+
 enum OrderStatus {
+  ACTIVE
   PENDING
-  PROCESS
-  DONE
+  SAVED
 }
 
 model Comment {
@@ -238,6 +287,7 @@ model GeneralInfo {
   email     String[]
   links     String[]
   phones    String[]
+  tgId      String
   createdAt DateTime @default(now())
 }
 

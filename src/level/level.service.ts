@@ -1,14 +1,15 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { CreateRegionDto } from './dto/create-region.dto';
-import { UpdateRegionDto } from './dto/update-region.dto';
+import { CreateLevelDto } from './dto/create-level.dto';
+import { UpdateLevelDto } from './dto/update-level.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
-export class RegionService {
+export class LevelService {
   constructor(private readonly prisma: PrismaService){}
-  async create(data: CreateRegionDto) {
+
+  async create(data: CreateLevelDto) {
     try {
-      let region = await this.prisma.region.findFirst({
+      let level = await this.prisma.level.findFirst({
         where: {
           OR: [
             { name_uz: data.name_uz },
@@ -17,10 +18,13 @@ export class RegionService {
           ],
         },
       });
-      if(region) throw new BadRequestException({message: "region already exists!"})
 
-      let newRegion = await this.prisma.region.create({data})
-      return newRegion;
+      console
+      if(level) throw new BadRequestException({message: "level already exists!"})
+        
+     
+      let newLevel = await this.prisma.level.create({data})
+      return newLevel;
     } catch (error) {
       console.log(error)
       throw new BadRequestException({message: error.message})
@@ -55,14 +59,14 @@ export class RegionService {
         orderBy[sortBy] = sortOrder;
       }
   
-      const data = await this.prisma.region.findMany({
+      const data = await this.prisma.level.findMany({
         where,
         skip,
         take: limit,
         orderBy,
       });
   
-      const total = await this.prisma.region.count({ where });
+      const total = await this.prisma.level.count({ where });
   
       return {
         data,
@@ -80,21 +84,21 @@ export class RegionService {
 
   async findOne(id: string) {
     try {
-      let region = await this.prisma.region.findFirst({where:{id}})
-      if(!region){
-        throw new NotFoundException({message: 'Region not found. Try again!'})
+      let level = await this.prisma.level.findFirst({where:{id}})
+      if(!level){
+        throw new NotFoundException({message: 'Level not found. Try again!'})
       }
-      return region
+      return level
     } catch (error) {
       throw new BadRequestException({message: error.message})
     }
   }
 
-  async update(id: string, data: UpdateRegionDto) {
+  async update(id: string, data: UpdateLevelDto) {
     try {
       await this.findOne(id)
-      let region = await this.prisma.region.update({where:{id},data})
-      return region
+      let level = await this.prisma.level.update({where:{id},data})
+      return level
     } catch (error) {
       throw new BadRequestException({message: error.message})
     }
@@ -103,10 +107,10 @@ export class RegionService {
   async remove(id: string) {
     try {
       await this.findOne(id)
-      let region = await this.prisma.region.delete({where:{id}})
-      return region
+      let level = await this.prisma.level.delete({where:{id}})
+      return level
     } catch (error) {
       throw new BadRequestException({message: error.message})
     }
-  }
+}
 }

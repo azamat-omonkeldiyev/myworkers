@@ -1,26 +1,26 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { CreateRegionDto } from './dto/create-region.dto';
-import { UpdateRegionDto } from './dto/update-region.dto';
+import { CreateCapacityDto } from './dto/create-capacity.dto';
+import { UpdateCapacityDto } from './dto/update-capacity.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
-export class RegionService {
+export class CapacityService {
   constructor(private readonly prisma: PrismaService){}
-  async create(data: CreateRegionDto) {
+  async create(data: CreateCapacityDto) {
     try {
-      let region = await this.prisma.region.findFirst({
+      let cap = await this.prisma.capacity.findFirst({
         where: {
           OR: [
             { name_uz: data.name_uz },
             { name_ru: data.name_ru },
-            { name_en: data.name_en },
+            { name_en: data.name_en},
           ],
         },
       });
-      if(region) throw new BadRequestException({message: "region already exists!"})
-
-      let newRegion = await this.prisma.region.create({data})
-      return newRegion;
+      if(cap) throw new BadRequestException({message: "Capacity already exists!"})
+        
+      let newCap = await this.prisma.capacity.create({data})
+      return newCap;
     } catch (error) {
       console.log(error)
       throw new BadRequestException({message: error.message})
@@ -55,14 +55,14 @@ export class RegionService {
         orderBy[sortBy] = sortOrder;
       }
   
-      const data = await this.prisma.region.findMany({
+      const data = await this.prisma.capacity.findMany({
         where,
         skip,
         take: limit,
         orderBy,
       });
   
-      const total = await this.prisma.region.count({ where });
+      const total = await this.prisma.capacity.count({ where });
   
       return {
         data,
@@ -76,25 +76,24 @@ export class RegionService {
       throw new BadRequestException({ message: error.message });
     }
   }
-  
 
   async findOne(id: string) {
     try {
-      let region = await this.prisma.region.findFirst({where:{id}})
-      if(!region){
-        throw new NotFoundException({message: 'Region not found. Try again!'})
+      let capacity = await this.prisma.capacity.findFirst({where:{id}})
+      if(!capacity){
+        throw new NotFoundException({message: 'Capacity not found. Try again!'})
       }
-      return region
+      return capacity
     } catch (error) {
       throw new BadRequestException({message: error.message})
     }
   }
 
-  async update(id: string, data: UpdateRegionDto) {
+  async update(id: string, data: UpdateCapacityDto) {
     try {
       await this.findOne(id)
-      let region = await this.prisma.region.update({where:{id},data})
-      return region
+      let capacity = await this.prisma.capacity.update({where:{id},data})
+      return capacity
     } catch (error) {
       throw new BadRequestException({message: error.message})
     }
@@ -103,8 +102,8 @@ export class RegionService {
   async remove(id: string) {
     try {
       await this.findOne(id)
-      let region = await this.prisma.region.delete({where:{id}})
-      return region
+      let capacity = await this.prisma.capacity.delete({where:{id}})
+      return capacity
     } catch (error) {
       throw new BadRequestException({message: error.message})
     }

@@ -8,7 +8,7 @@ CREATE TYPE "meansureEnum" AS ENUM ('DAY', 'HOUR');
 CREATE TYPE "paymentEnum" AS ENUM ('CASH', 'CARD');
 
 -- CreateEnum
-CREATE TYPE "OrderStatus" AS ENUM ('PENDING', 'PROCESS', 'DONE');
+CREATE TYPE "OrderStatus" AS ENUM ('ACTIVE', 'PENDING', 'SAVED');
 
 -- CreateTable
 CREATE TABLE "Region" (
@@ -45,6 +45,7 @@ CREATE TABLE "User" (
 CREATE TABLE "Sessions" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
+    "ip_address" TEXT NOT NULL,
     "deviceData" JSONB NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -114,9 +115,6 @@ CREATE TABLE "Product" (
     "name_en" TEXT,
     "name_ru" TEXT,
     "image" TEXT NOT NULL,
-    "minWorkingHours" INTEGER NOT NULL,
-    "priceHourly" INTEGER NOT NULL,
-    "priceDaily" INTEGER NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Product_pkey" PRIMARY KEY ("id")
@@ -128,6 +126,9 @@ CREATE TABLE "Level" (
     "name_uz" TEXT,
     "name_en" TEXT,
     "name_ru" TEXT,
+    "minWorkingHours" INTEGER NOT NULL,
+    "priceHourly" INTEGER NOT NULL,
+    "priceDaily" INTEGER NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Level_pkey" PRIMARY KEY ("id")
@@ -140,13 +141,26 @@ CREATE TABLE "Master" (
     "phone" TEXT NOT NULL,
     "isActive" BOOLEAN NOT NULL,
     "year" INTEGER NOT NULL,
-    "MasterJobs" JSONB NOT NULL,
     "image" TEXT NOT NULL,
     "passportImage" TEXT NOT NULL,
     "about" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Master_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "MasterItems" (
+    "id" TEXT NOT NULL,
+    "masterId" TEXT NOT NULL,
+    "productId" TEXT NOT NULL,
+    "minWorkingHours" INTEGER NOT NULL,
+    "levelId" TEXT NOT NULL,
+    "priceHourly" INTEGER NOT NULL,
+    "priceDaily" INTEGER NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "MasterItems_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -180,12 +194,12 @@ CREATE TABLE "Order" (
 -- CreateTable
 CREATE TABLE "OrderItems" (
     "id" TEXT NOT NULL,
-    "total" DOUBLE PRECISION,
     "orderId" TEXT NOT NULL,
+    "productId" TEXT NOT NULL,
     "levelId" TEXT NOT NULL,
     "quantity" INTEGER NOT NULL,
-    "toolsId" TEXT NOT NULL,
     "meansure" "meansureEnum" NOT NULL,
+    "meansureCount" DOUBLE PRECISION,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "OrderItems_pkey" PRIMARY KEY ("id")
@@ -201,6 +215,21 @@ CREATE TABLE "OrderTools" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "OrderTools_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "BasketItems" (
+    "id" TEXT NOT NULL,
+    "productId" TEXT,
+    "userId" TEXT NOT NULL,
+    "levelId" TEXT,
+    "toolId" TEXT,
+    "quantity" INTEGER NOT NULL,
+    "meansure" "meansureEnum" NOT NULL,
+    "total" DOUBLE PRECISION,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "BasketItems_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -327,6 +356,15 @@ ALTER TABLE "Tools" ADD CONSTRAINT "Tools_capacityId_fkey" FOREIGN KEY ("capacit
 ALTER TABLE "Tools" ADD CONSTRAINT "Tools_sizeId_fkey" FOREIGN KEY ("sizeId") REFERENCES "Size"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "MasterItems" ADD CONSTRAINT "MasterItems_masterId_fkey" FOREIGN KEY ("masterId") REFERENCES "Master"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "MasterItems" ADD CONSTRAINT "MasterItems_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "MasterItems" ADD CONSTRAINT "MasterItems_levelId_fkey" FOREIGN KEY ("levelId") REFERENCES "Level"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "Star" ADD CONSTRAINT "Star_masterId_fkey" FOREIGN KEY ("masterId") REFERENCES "Master"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -339,16 +377,28 @@ ALTER TABLE "Order" ADD CONSTRAINT "Order_userId_fkey" FOREIGN KEY ("userId") RE
 ALTER TABLE "OrderItems" ADD CONSTRAINT "OrderItems_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "OrderItems" ADD CONSTRAINT "OrderItems_levelId_fkey" FOREIGN KEY ("levelId") REFERENCES "Level"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "OrderItems" ADD CONSTRAINT "OrderItems_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "OrderItems" ADD CONSTRAINT "OrderItems_toolsId_fkey" FOREIGN KEY ("toolsId") REFERENCES "Tools"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "OrderItems" ADD CONSTRAINT "OrderItems_levelId_fkey" FOREIGN KEY ("levelId") REFERENCES "Level"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "OrderTools" ADD CONSTRAINT "OrderTools_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "OrderTools" ADD CONSTRAINT "OrderTools_toolsId_fkey" FOREIGN KEY ("toolsId") REFERENCES "Tools"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "BasketItems" ADD CONSTRAINT "BasketItems_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "BasketItems" ADD CONSTRAINT "BasketItems_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "BasketItems" ADD CONSTRAINT "BasketItems_levelId_fkey" FOREIGN KEY ("levelId") REFERENCES "Level"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "BasketItems" ADD CONSTRAINT "BasketItems_toolId_fkey" FOREIGN KEY ("toolId") REFERENCES "Tools"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Comment" ADD CONSTRAINT "Comment_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

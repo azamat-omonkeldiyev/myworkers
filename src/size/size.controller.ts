@@ -1,16 +1,16 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
-import { RegionService } from './region.service';
-import { CreateRegionDto } from './dto/create-region.dto';
-import { UpdateRegionDto } from './dto/update-region.dto';
+import { SizeService } from './size.service';
+import { CreateSizeDto } from './dto/create-size.dto';
+import { UpdateSizeDto } from './dto/update-size.dto';
 import { ApiQuery } from '@nestjs/swagger';
 
-@Controller('region')
-export class RegionController {
-  constructor(private readonly regionService: RegionService) {}
+@Controller('size')
+export class SizeController {
+  constructor(private readonly sizeService: SizeService) {}
 
   @Post()
-  create(@Body() createRegionDto: CreateRegionDto) {
-    return this.regionService.create(createRegionDto);
+  create(@Body() createSizeDto: CreateSizeDto) {
+    return this.sizeService.create(createSizeDto);
   }
 
   @Get()
@@ -38,21 +38,22 @@ export class RegionController {
   ) {
     const page = Number(pageStr) || 1;
     const limit = Number(limitStr) || 10;
-    return this.regionService.findAll({page,limit,name,sortBy,sortOrder});
+    return this.sizeService.findAll({page,limit,name,sortBy,sortOrder});
   }
+
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.regionService.findOne(id);
+    return this.sizeService.findOne(id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateRegionDto: UpdateRegionDto) {
-    return this.regionService.update(id, updateRegionDto);
+  update(@Param('id') id: string, @Body() updateSizeDto: UpdateSizeDto) {
+    return this.sizeService.update(id, updateSizeDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.regionService.remove(id);
+    return this.sizeService.remove(id);
   }
 }

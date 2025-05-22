@@ -1,14 +1,15 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { CreateRegionDto } from './dto/create-region.dto';
-import { UpdateRegionDto } from './dto/update-region.dto';
+import { CreateSizeDto } from './dto/create-size.dto';
+import { UpdateSizeDto } from './dto/update-size.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
-export class RegionService {
+export class SizeService {
   constructor(private readonly prisma: PrismaService){}
-  async create(data: CreateRegionDto) {
+
+  async create(data: CreateSizeDto) {
     try {
-      let region = await this.prisma.region.findFirst({
+      let size = await this.prisma.size.findFirst({
         where: {
           OR: [
             { name_uz: data.name_uz },
@@ -17,10 +18,10 @@ export class RegionService {
           ],
         },
       });
-      if(region) throw new BadRequestException({message: "region already exists!"})
-
-      let newRegion = await this.prisma.region.create({data})
-      return newRegion;
+      if(size) throw new BadRequestException({message: "Size already exists!"})
+        
+      let newSize = await this.prisma.size.create({data})
+      return newSize;
     } catch (error) {
       console.log(error)
       throw new BadRequestException({message: error.message})
@@ -55,14 +56,14 @@ export class RegionService {
         orderBy[sortBy] = sortOrder;
       }
   
-      const data = await this.prisma.region.findMany({
+      const data = await this.prisma.size.findMany({
         where,
         skip,
         take: limit,
         orderBy,
       });
   
-      const total = await this.prisma.region.count({ where });
+      const total = await this.prisma.size.count({ where });
   
       return {
         data,
@@ -80,21 +81,21 @@ export class RegionService {
 
   async findOne(id: string) {
     try {
-      let region = await this.prisma.region.findFirst({where:{id}})
-      if(!region){
-        throw new NotFoundException({message: 'Region not found. Try again!'})
+      let size = await this.prisma.size.findFirst({where:{id}})
+      if(!size){
+        throw new NotFoundException({message: 'Size not found. Try again!'})
       }
-      return region
+      return size
     } catch (error) {
       throw new BadRequestException({message: error.message})
     }
   }
 
-  async update(id: string, data: UpdateRegionDto) {
+  async update(id: string, data: UpdateSizeDto) {
     try {
       await this.findOne(id)
-      let region = await this.prisma.region.update({where:{id},data})
-      return region
+      let size = await this.prisma.size.update({where:{id},data})
+      return size
     } catch (error) {
       throw new BadRequestException({message: error.message})
     }
@@ -103,10 +104,10 @@ export class RegionService {
   async remove(id: string) {
     try {
       await this.findOne(id)
-      let region = await this.prisma.region.delete({where:{id}})
-      return region
+      let size = await this.prisma.size.delete({where:{id}})
+      return size
     } catch (error) {
       throw new BadRequestException({message: error.message})
     }
-  }
+}
 }
