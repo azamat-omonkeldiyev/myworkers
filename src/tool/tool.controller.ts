@@ -1,13 +1,20 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards } from '@nestjs/common';
 import { ToolService } from './tool.service';
 import { CreateToolDto } from './dto/create-tool.dto';
 import { UpdateToolDto } from './dto/update-tool.dto';
 import { ApiQuery } from '@nestjs/swagger';
+import { Roles } from 'src/user/decorators/role.decorator';
+import { UserRole } from '@prisma/client';
+import { RoleGuard } from 'src/guard/role.guard';
+import { AuthGuard } from 'src/guard/auth.guard';
 
 @Controller('tool')
 export class ToolController {
   constructor(private readonly toolService: ToolService) {}
 
+  @Roles(UserRole.ADMIN)
+  @UseGuards(RoleGuard)
+  @UseGuards(AuthGuard)
   @Post()
   create(@Body() createToolDto: CreateToolDto) {
     return this.toolService.create(createToolDto);
@@ -52,11 +59,17 @@ export class ToolController {
     return this.toolService.findOne(id);
   }
 
+  @Roles(UserRole.ADMIN,UserRole.SUPERADMIN)
+  @UseGuards(RoleGuard)
+  @UseGuards(AuthGuard)
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateToolDto: UpdateToolDto) {
     return this.toolService.update(id, updateToolDto);
   }
 
+  @Roles(UserRole.ADMIN)
+  @UseGuards(RoleGuard)
+  @UseGuards(AuthGuard)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.toolService.remove(id);

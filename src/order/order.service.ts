@@ -7,10 +7,14 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { OrderStatus } from '@prisma/client';
+import { TelegramService } from 'src/bot/bot.service';
 
 @Injectable()
 export class OrderService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly bot: TelegramService,
+  ) {}
 
   async create(dto: CreateOrderDto, userId: string) {
     const { orderItems, orderTools, ...orderData } = dto;
@@ -126,6 +130,36 @@ export class OrderService {
 
         return finalOrder;
       });
+
+      if (!result) return result;
+
+      let productItems = result.OrderItems.map((item, index) => {
+        return `🔹 ${index + 1}) ${item.product.name_uz} (${item.level.name_uz})\n  - M: ${item.meansure} x ${item.meansureCount}  x ${item.quantity}`;
+      }).join('\n');
+
+      let toolItems = result.OrderTools.map((tool, index) => {
+        return `🛠 ${index + 1}) ${tool.tool.name_uz}\n  - Count: ${tool.count}`;
+      }).join('\n');
+
+      const user = await this.prisma.user.findUnique({ where: { id: userId } });
+
+      let message = `
+📦 Yangi Buyurtma Yaratildi!
+🆔 Order ID: ${result.id}
+👤 Foydalanuvchi: ${user?.fullname || user?.id}  | 📱 ${user?.phone || 'no number'}
+💰 Umumiy summa: ${result.total} so'm
+
+🛒 Mahsulotlar:
+${productItems || 'Yo‘q'}
+
+🔧 Asboblar:
+${toolItems || 'Yo‘q'}
+
+🕒 Sana: ${new Date(result.createdAt).toLocaleString('uz-UZ')}
+`;
+
+      await this.bot.sendMessageToUser(message);
+
       return result;
     } catch (error) {
       console.error(error);

@@ -12,14 +12,18 @@ import { MailService } from 'src/mail/mail.service';
 import { verifyOtpDto } from './dto/verify-otp.dto';
 import { Request } from 'express';
 import { CreateAdminrDto } from './dto/createAdmin.dto';
+import { ResetPasswordDto } from './dto/resetPassport.dto';
+import { ResetPasswordEmailDto } from './dto/resetOtpToEmail.dto';
+import { TelegramService } from 'src/bot/bot.service';
 
 
 @Injectable()
 export class UserService {
   constructor(
+    private readonly bot: TelegramService,
     private readonly prisma: PrismaService,
     private readonly mail: MailService,
-    private readonly jwt: JwtService
+    private readonly jwt: JwtService,
   ){}
 
   genAccToken(payload:{id:string, role:string}):string{
@@ -90,6 +94,8 @@ export class UserService {
     }
   }
 
+
+
   async register(data: CreateUserDto) {
     try {
       let user = await this.checkEmail(data.email);
@@ -111,6 +117,19 @@ export class UserService {
       let newUser= await this.prisma.user.create({
         data: {...data, password: hash}
       })
+
+      const message = `
+🆕 Yangi foydalanuvchi ro'yxatdan o'tdi:
+
+👤 Ism: ${newUser.fullname ?? '-'}
+📧 Email: ${newUser.email}
+📞 Tel: ${newUser.phone}
+📍 Hudud: ${region.name_uz}
+🕒 Vaqt: ${new Date().toLocaleString('uz-UZ')}
+    `;
+
+    await this.bot.sendMessageToUser(message);
+
       return newUser;
     } catch (error) {
       throw new BadRequestException({message: error.message})
@@ -159,6 +178,53 @@ export class UserService {
       throw new BadRequestException(error.message);
     }
   }
+ 
+
+
+  async resetPassword(data: ResetPasswordDto) {
+    try {
+      let {email,otp,newPassword} = data
+      const match = this.mail.checkOtp(otp, email);
+      if (!match) throw new BadRequestException('Invalid or expired OTP');
+  
+      const user = await this.checkEmail(email);
+      if (!user) throw new NotFoundException('User not found');
+  
+      const hashedPassword = bcrypt.hashSync(newPassword, 10);
+      
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { password: hashedPassword },
+      });
+  
+      return { message: 'Password has been successfully reset.' };
+    } catch (error) {
+      console.log(error)
+      throw new BadRequestException({ message: error.message });
+    }
+  }
+
+
+  async sendResetPasswordEmail(data: ResetPasswordEmailDto) {
+    try {
+      let {email} = data
+      const user = await this.checkEmail(email);
+      if (!user) throw new NotFoundException('User not found!');
+  
+      const otp = this.mail.createOtp(email);
+      const message = await this.mail.sendEmail(
+        email,
+        'Password Reset Request',
+        `<h4>Your password reset code is <h3><u>${otp}</u></h3>. It is valid for 2 minutes.</h4>`
+      );
+  
+      return { message };
+    } catch (error) {
+      throw new BadRequestException({ message: error.message });
+    }
+  }
+  
+  
 
   async me(id: string) {
     try {

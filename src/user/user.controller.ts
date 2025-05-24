@@ -10,6 +10,10 @@ import { Request } from 'express';
 import { ApiQuery } from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
 import { AuthGuard } from 'src/guard/auth.guard';
+import { ResetPasswordDto } from './dto/resetPassport.dto';
+import { ResetPasswordEmailDto } from './dto/resetOtpToEmail.dto';
+import { Roles } from './decorators/role.decorator';
+import { RoleGuard } from 'src/guard/role.guard';
 
 @Controller('user')
 export class UserController {
@@ -41,6 +45,20 @@ export class UserController {
     return this.userService.verifyRefreshToken(data);
   }
 
+  @Post('resetSendOtpEmail')
+  resetPasswordEmail(@Body() data: ResetPasswordEmailDto) {
+    return this.userService.sendResetPasswordEmail(data);
+  }
+
+  @Post('resetPassword')
+  resetPassword(@Body() data: ResetPasswordDto) {
+    return this.userService.resetPassword(data);
+  }
+
+
+  @Roles(UserRole.ADMIN,UserRole.SUPERADMIN)
+  @UseGuards(RoleGuard)
+  @UseGuards(AuthGuard)
   @Get()
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
@@ -68,11 +86,13 @@ export class UserController {
   }
 
 
+  @UseGuards(AuthGuard)
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     return this.userService.update(id, updateUserDto);
   }
 
+  @UseGuards(AuthGuard)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.userService.remove(id);

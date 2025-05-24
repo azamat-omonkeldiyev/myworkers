@@ -61,19 +61,101 @@ export class CommentService {
     }
   }
 
-  findAll() {
-    return `This action returns all comment`;
+  async findAll(query: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    orderBy?: 'createdAt' | 'updatedAt';
+    order?: 'asc' | 'desc';
+    userId?: string;
+    orderId?: string;
+  }) {
+    const {
+      page = 1,
+      limit = 10,
+      search,
+      orderBy = 'createdAt',
+      order = 'desc',
+      userId,
+      orderId,
+    } = query;
+  
+    const where: any = {};
+  
+    if (search) {
+      where.message = { contains: search, mode: 'insensitive' };
+    }
+  
+    if (userId) {
+      where.userId = userId;
+    }
+  
+    if (orderId) {
+      where.orderId = orderId;
+    }
+  
+    const [comments, total] = await this.prisma.$transaction([
+      this.prisma.comment.findMany({
+        where,
+        orderBy: { [orderBy]: order },
+        skip: (page - 1) * limit,
+        take: limit,
+        include: {
+          user: true,
+          order: true,
+        },
+      }),
+      this.prisma.comment.count({ where }),
+    ]);
+  
+    return {
+      data: comments,
+      meta: {
+        total,
+        page,
+        lastPage: Math.ceil(total / limit),
+      },
+    };
+  }
+  
+
+  async findOne(id: string) {
+    const comment = await this.prisma.comment.findUnique({
+      where: { id },
+      include: {
+        user: true,
+        order: true,
+      },
+    });
+
+    if (!comment) {
+      throw new NotFoundException({ message: 'Comment not found' });
+    }
+
+    return comment;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} comment`;
+  async update(id: string, updateCommentDto: UpdateCommentDto) {
+    try {
+      await this.findOne(id);
+      return this.prisma.comment.update({
+        where: { id },
+        data: updateCommentDto,
+      });
+    } catch (error) {
+      console.error(error);
+      throw new BadRequestException({ message: error.message });
+    }
   }
 
-  update(id: number, updateCommentDto: UpdateCommentDto) {
-    return `This action updates a #${id} comment`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} comment`;
+  async remove(id: string) {
+    try {
+      await this.findOne(id);
+      return this.prisma.comment.delete({
+        where: { id },
+      });
+    } catch (error) {
+      throw new BadRequestException({ message: error.message });
+    }
   }
 }

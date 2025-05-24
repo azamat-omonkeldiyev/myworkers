@@ -18,7 +18,7 @@ export class MailService {
 
     createOtp(email:string){
         const otp = authenticator.generate(email)
-
+        console.log(otp)
         return otp
     }
 

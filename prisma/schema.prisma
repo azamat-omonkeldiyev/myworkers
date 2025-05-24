@@ -306,7 +306,7 @@ model FAQ {
   question  String
   user      User     @relation(fields: [userId], references: [id])
   userId    String
-  answer    String
+  answer    String?
   createdAt DateTime @default(now())
 }
 

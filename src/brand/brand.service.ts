@@ -2,10 +2,13 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { CreateBrandDto } from './dto/create-brand.dto';
 import { UpdateBrandDto } from './dto/update-brand.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { TelegramService } from 'src/bot/bot.service';
 
 @Injectable()
 export class BrandService {
-  constructor(private readonly prisma: PrismaService){}
+  constructor(private readonly prisma: PrismaService,
+    private readonly bot: TelegramService
+  ){}
   async create(data: CreateBrandDto) {
     try {
       let brand = await this.prisma.brand.findFirst({
@@ -20,6 +23,8 @@ export class BrandService {
       if(brand) throw new BadRequestException({message: "Brand already exists!"})
         
       let newBrand = await this.prisma.brand.create({data})
+      let result = await this.bot.sendMessageToUser('salom')
+      console.log(result)
       return newBrand;
     } catch (error) {
       console.log(error)

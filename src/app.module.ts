@@ -20,6 +20,13 @@ import { MasterModule } from './master/master.module';
 import { OrderModule } from './order/order.module';
 import { BasketModule } from './basket/basket.module';
 import { CommentModule } from './comment/comment.module';
+import { GeneralInfoModule } from './general-info/general-info.module';
+import { ContactModule } from './contact/contact.module';
+import { ShowcaseModule } from './showcase/showcase.module';
+import { PartnersModule } from './partners/partners.module';
+import { FaqModule } from './faq/faq.module';
+import {  TelegramModule } from './bot/bot.module';
+import { MyDataModule } from './mydata/mydata.module';
 
 @Module({
   imports: [
@@ -43,7 +50,14 @@ import { CommentModule } from './comment/comment.module';
     OrderModule,
     BasketModule,
     CommentModule,
-  ],
+    GeneralInfoModule,
+    ContactModule,
+    ShowcaseModule,
+    PartnersModule,
+    FaqModule,
+    TelegramModule,
+    MyDataModule
+    ],
   controllers: [AppController, MulterController],
   providers: [AppService],
 })

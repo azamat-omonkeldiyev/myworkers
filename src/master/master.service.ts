@@ -2,10 +2,13 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { CreateMasterDto } from './dto/create-master.dto';
 import { UpdateMasterDto } from './dto/update-master.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { TelegramService } from 'src/bot/bot.service';
 
 @Injectable()
 export class MasterService {
-  constructor(private readonly prisma:PrismaService){}
+  constructor(private readonly prisma:PrismaService,
+    private readonly bot: TelegramService
+  ){}
   async create(dto: CreateMasterDto) {
     const { masterItems, ...masterData } = dto;
 
@@ -32,7 +35,9 @@ export class MasterService {
         });
       }
 
-      return this.prisma.master.findFirst({
+
+
+      let newMaster =  await this.prisma.master.findFirst({
         where: { id: createdMaster.id },
         include: {
           MasterItems: {
@@ -43,6 +48,29 @@ export class MasterService {
           },
         },
       });
+      if(!newMaster) return newMaster
+      let masterInfo = newMaster?.MasterItems.map((item, index) => {
+        return `🔹 ${index + 1}) ${item.product.name_uz} - ${item.level.name_uz}
+        🕒 Minimal soat: ${item.minWorkingHours}
+        💰 Soatlik: ${item.priceHourly} so'm
+        📅 Kunlik: ${item.priceDaily} so'm`;
+      }).join('\n');
+      
+      let message = `
+      👷‍♂️ Yangi Usta Qo‘shildi!
+      🆔 ID: ${newMaster?.id}
+      📛 Ism: ${newMaster?.fullname || 'Noma’lum'}
+      
+      🛠 Mutaxassisligi:
+      ${masterInfo || 'Ma’lumot yo‘q'}
+      
+      🕒 Qo‘shilgan sana: ${new Date(newMaster.createdAt).toLocaleString('uz-UZ')}
+      `;
+      
+      await this.bot.sendMessageToUser(message.trim());
+      
+
+      return newMaster
     } catch (error) {
       throw new BadRequestException(error.message);
     }
