@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateMasterDto } from './dto/create-master.dto';
 import { UpdateMasterDto } from './dto/update-master.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -6,9 +10,10 @@ import { TelegramService } from 'src/bot/bot.service';
 
 @Injectable()
 export class MasterService {
-  constructor(private readonly prisma:PrismaService,
-    private readonly bot: TelegramService
-  ){}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly bot: TelegramService,
+  ) {}
   async create(dto: CreateMasterDto) {
     const { masterItems, ...masterData } = dto;
 
@@ -21,7 +26,8 @@ export class MasterService {
       });
 
       for (const item of masterItems) {
-        const { productId, levelId, minWorkingHours, priceHourly, priceDaily } = item;
+        const { productId, levelId, minWorkingHours, priceHourly, priceDaily } =
+          item;
 
         await this.prisma.masterItems.create({
           data: {
@@ -35,9 +41,7 @@ export class MasterService {
         });
       }
 
-
-
-      let newMaster =  await this.prisma.master.findFirst({
+      let newMaster = await this.prisma.master.findFirst({
         where: { id: createdMaster.id },
         include: {
           MasterItems: {
@@ -48,14 +52,14 @@ export class MasterService {
           },
         },
       });
-      if(!newMaster) return newMaster
+      if (!newMaster) return newMaster;
       let masterInfo = newMaster?.MasterItems.map((item, index) => {
         return `🔹 ${index + 1}) ${item.product.name_uz} - ${item.level.name_uz}
         🕒 Minimal soat: ${item.minWorkingHours}
         💰 Soatlik: ${item.priceHourly} so'm
         📅 Kunlik: ${item.priceDaily} so'm`;
       }).join('\n');
-      
+
       let message = `
       👷‍♂️ Yangi Usta Qo‘shildi!
       🆔 ID: ${newMaster?.id}
@@ -66,11 +70,10 @@ export class MasterService {
       
       🕒 Qo‘shilgan sana: ${new Date(newMaster.createdAt).toLocaleString('uz-UZ')}
       `;
-      
-      await this.bot.sendMessageToUser(message.trim());
-      
 
-      return newMaster
+      await this.bot.sendMessageToUser(message.trim());
+
+      return newMaster;
     } catch (error) {
       throw new BadRequestException(error.message);
     }
@@ -96,17 +99,17 @@ export class MasterService {
       levelId,
       productId,
     } = query;
-  
+
     const where: any = {};
-  
+
     if (search) {
       where.fullname = { contains: search, mode: 'insensitive' };
     }
-  
+
     if (isActive !== undefined) {
       where.isActive = isActive;
     }
-  
+
     if (levelId || productId) {
       where.MasterItems = {
         some: {
@@ -115,105 +118,126 @@ export class MasterService {
         },
       };
     }
-  
-    const total = await this.prisma.master.count({ where });
-  
-    const masters = await this.prisma.master.findMany({
-      where,
-      skip: (page - 1) * limit,
-      take: +limit,
-      orderBy: {
-        [sortBy]: sortOrder,
-      },
-      include:{
-        MasterItems: {
-          include:{
-            product:true,
-            level: true
-          }
-        }
-      }
-    });
-  
-    return {
-      total,
-      page,
-      limit,
-      data: masters,
-    };
-  }
-  
 
-  async findOne(id: string) {
-    const master = await this.prisma.master.findUnique({
-      where: { id },
-      include: {
-        MasterItems: {
-          include: {
-            product: true,
-            level: true,
+    const total = await this.prisma.master.count({ where });
+
+    try {
+      const masters = await this.prisma.master.findMany({
+        where,
+        skip: (page - 1) * limit,
+        take: +limit,
+        orderBy: {
+          [sortBy]: sortOrder,
+        },
+        include: {
+          MasterItems: {
+            include: {
+              product: true,
+              level: true,
+            },
           },
         },
-        OrderMaster: {
-          include:{ order: true}
-        },
-        Star: true,
-      },
-    });
-  
-    if (!master) {
-      throw new NotFoundException(`Master with id ${id} not found`);
+      });
+
+      return {
+        total,
+        page,
+        limit,
+        data: masters,
+      };
+    } catch (error) {
+      throw new BadRequestException({ message: error.message });
     }
-  
-    const starCount = master.Star.length;
-    const averageStar = starCount
-      ? master.Star.reduce((sum, s) => sum + s.star, 0) / starCount
-      : null;
-  
-    return {
-      ...master,
-      averageStar: averageStar ? +averageStar.toFixed(2) : null,
-    };
   }
-  
+
+  async findOne(id: string) {
+    try {
+      const master = await this.prisma.master.findUnique({
+        where: { id },
+        include: {
+          MasterItems: {
+            include: {
+              product: true,
+              level: true,
+            },
+          },
+          OrderMaster: {
+            include: { order: true },
+          },
+          Star: true,
+        },
+      });
+
+      if (!master) {
+        throw new NotFoundException(`Master with id ${id} not found`);
+      }
+
+      const starCount = master.Star.length;
+      const averageStar = starCount
+        ? master.Star.reduce((sum, s) => sum + s.star, 0) / starCount
+        : null;
+
+      return {
+        ...master,
+        averageStar: averageStar ? +averageStar.toFixed(2) : null,
+      };
+    } catch (error) {
+      throw new BadRequestException({ message: error.message });
+    }
+  }
+
   async update(id: string, dto: UpdateMasterDto) {
     const { masterItems, ...masterData } = dto;
 
-    const master = await this.prisma.master.findUnique({ where: { id } });
-    if (!master) throw new NotFoundException(`Master with id ${id} not found`);
+    try {
+      const master = await this.prisma.master.findUnique({ where: { id } });
+      if (!master)
+        throw new NotFoundException(`Master with id ${id} not found`);
 
-    await this.prisma.master.update({
-      where: { id },
-      data: masterData,
-    });
+      await this.prisma.master.update({
+        where: { id },
+        data: masterData,
+      });
 
-    if (masterItems && masterItems.length > 0) {
-      await this.prisma.masterItems.deleteMany({ where: { masterId: id } });
+      if (masterItems && masterItems.length > 0) {
+        await this.prisma.masterItems.deleteMany({ where: { masterId: id } });
 
-      for (const item of masterItems) {
-        await this.prisma.masterItems.create({
-          data: {
-            masterId: id,
-            productId: item.productId,
-            levelId: item.levelId,
-            minWorkingHours: item.minWorkingHours,
-            priceHourly: item.priceHourly,
-            priceDaily: item.priceDaily,
-          },
-        });
+        for (const item of masterItems) {
+          await this.prisma.masterItems.create({
+            data: {
+              masterId: id,
+              productId: item.productId,
+              levelId: item.levelId,
+              minWorkingHours: item.minWorkingHours,
+              priceHourly: item.priceHourly,
+              priceDaily: item.priceDaily,
+            },
+          });
+        }
       }
-    }
 
-    return this.findOne(id);
+      return this.findOne(id);
+    } catch (error) {
+      throw new BadRequestException({ message: error.message });
+    }
   }
 
   async remove(id: string) {
-    const master = await this.prisma.master.findUnique({ where: { id } });
-    if (!master) throw new NotFoundException(`Master with id ${id} not found`);
+    try {
+      const master = await this.prisma.master.findUnique({ where: { id } });
+      if (!master)
+        throw new NotFoundException(`Master with id ${id} not found`);
 
-    await this.prisma.masterItems.deleteMany({ where: { masterId: id } });
-    await this.prisma.master.delete({ where: { id } });
+      let deleted = await this.prisma.$transaction([
+        this.prisma.star.deleteMany({ where: { masterId: id } }),
+        this.prisma.orderMaster.deleteMany({ where: { masterId: id } }),
+        this.prisma.masterItems.deleteMany({ where: { masterId: id } }),
+        this.prisma.master.delete({ where: { id } }),
+      ]);
 
-    return { message: `Master with id ${id} deleted successfully` };
+      return deleted[3];
+    } catch (error) {
+      throw new BadRequestException({ message: error.message });
+    }
   }
 }

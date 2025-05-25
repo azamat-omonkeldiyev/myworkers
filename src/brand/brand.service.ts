@@ -108,7 +108,7 @@ export class BrandService {
   async remove(id: string) {
     try {
       await this.findOne(id)
-      let brand = await this.prisma.region.delete({where:{id}})
+      let brand = await this.prisma.brand.delete({where:{id}})
       return brand
     } catch (error) {
       throw new BadRequestException({message: error.message})

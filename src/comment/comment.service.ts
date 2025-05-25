@@ -94,45 +94,53 @@ export class CommentService {
       where.orderId = orderId;
     }
   
-    const [comments, total] = await this.prisma.$transaction([
-      this.prisma.comment.findMany({
-        where,
-        orderBy: { [orderBy]: order },
-        skip: (page - 1) * limit,
-        take: limit,
-        include: {
-          user: true,
-          order: true,
+    try {
+      const [comments, total] = await this.prisma.$transaction([
+        this.prisma.comment.findMany({
+          where,
+          orderBy: { [orderBy]: order },
+          skip: (page - 1) * limit,
+          take: limit,
+          include: {
+            user: true,
+            order: true,
+          },
+        }),
+        this.prisma.comment.count({ where }),
+      ]);
+    
+      return {
+        data: comments,
+        meta: {
+          total,
+          page,
+          lastPage: Math.ceil(total / limit),
         },
-      }),
-      this.prisma.comment.count({ where }),
-    ]);
-  
-    return {
-      data: comments,
-      meta: {
-        total,
-        page,
-        lastPage: Math.ceil(total / limit),
-      },
-    };
+      };
+    } catch (error) {
+      throw new BadRequestException({message: error.message})
+    }
   }
   
 
   async findOne(id: string) {
-    const comment = await this.prisma.comment.findUnique({
-      where: { id },
-      include: {
-        user: true,
-        order: true,
-      },
-    });
-
-    if (!comment) {
-      throw new NotFoundException({ message: 'Comment not found' });
+    try {
+      const comment = await this.prisma.comment.findUnique({
+        where: { id },
+        include: {
+          user: true,
+          order: true,
+        },
+      });
+  
+      if (!comment) {
+        throw new NotFoundException({ message: 'Comment not found' });
+      }
+  
+      return comment;
+    } catch (error) {
+      throw new BadRequestException({message: error.message})
     }
-
-    return comment;
   }
 
   async update(id: string, updateCommentDto: UpdateCommentDto) {

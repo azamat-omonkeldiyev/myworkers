@@ -27,6 +27,7 @@ import { PartnersModule } from './partners/partners.module';
 import { FaqModule } from './faq/faq.module';
 import {  TelegramModule } from './bot/bot.module';
 import { MyDataModule } from './mydata/mydata.module';
+import { AdminExportModule } from './admin-export/admin-export.module';
 
 @Module({
   imports: [
@@ -56,7 +57,8 @@ import { MyDataModule } from './mydata/mydata.module';
     PartnersModule,
     FaqModule,
     TelegramModule,
-    MyDataModule
+    MyDataModule,
+    AdminExportModule
     ],
   controllers: [AppController, MulterController],
   providers: [AppService],
