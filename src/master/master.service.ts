@@ -125,6 +125,14 @@ export class MasterService {
       orderBy: {
         [sortBy]: sortOrder,
       },
+      include:{
+        MasterItems: {
+          include:{
+            product:true,
+            level: true
+          }
+        }
+      }
     });
   
     return {
