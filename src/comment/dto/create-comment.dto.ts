@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsArray, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
 import { execArgv } from 'process';
 
 export class CreateStarDto {
@@ -10,6 +10,8 @@ export class CreateStarDto {
   userId: string;
 
   @IsNumber()
+  @Min(1)
+  @Max(5)
   star: number;
 }
 
