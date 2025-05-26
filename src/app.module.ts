@@ -58,7 +58,7 @@ import { AdminExportModule } from './admin-export/admin-export.module';
     FaqModule,
     TelegramModule,
     MyDataModule,
-    AdminExportModule
+    AdminExportModule,
     ],
   controllers: [AppController, MulterController],
   providers: [AppService],
