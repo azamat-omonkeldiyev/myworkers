@@ -1,4 +1,4 @@
-import { Controller, Get, Post, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { BadRequestException, Controller, Get, Post, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBody, ApiConsumes } from '@nestjs/swagger';
 import { diskStorage } from 'multer';
@@ -33,6 +33,9 @@ export class MulterController {
         })
     }))
     uploadFile(@UploadedFile() file: Express.Multer.File) {
+    if (!file) {
+        throw new BadRequestException('Fayl yuklanmadi');
+      }
     return {filename:file.filename}
 }
 
