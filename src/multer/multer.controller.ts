@@ -33,7 +33,7 @@ export class MulterController {
         })
     }))
     uploadFile(@UploadedFile() file: Express.Multer.File) {
-    if (!file) {
+      if (!file) {
         throw new BadRequestException('Fayl yuklanmadi');
       }
     return {filename:file.filename}
